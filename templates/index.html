@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Digital Document Signing and Verification{% endblock %}
+{% block content %}
+{% if error %}<div class="notice error">{{ error }}</div>{% endif %}
+{% if page == "home" %}
+<section class="hero">
+  <div class="eyebrow">DOCUMENT INTEGRITY · DIGITAL AUTHENTICITY</div>
+  <h1>Sign documents.<br><span>Verify with confidence.</span></h1>
+  <p>Use ECDSA signatures and SHA-256 hashes to detect document changes and check signatures against a locally trusted public key.</p>
+  <div class="actions">
+    <a class="button primary" href="{{ url_for('sign') }}">Sign a document</a>
+    <a class="button" href="{{ url_for('verify') }}">Verify a bundle</a>
+  </div>
+</section>
+<section class="cards">
+  <article><div class="number">01</div><h2>Sign</h2><p>Unlock the encrypted private key with your passphrase and create a signed ZIP bundle.</p></article>
+  <article><div class="number">02</div><h2>Verify</h2><p>Check the signature, document hash, and bundled key against the locally trusted public key.</p></article>
+  <article><div class="number">03</div><h2>Protect</h2><p>The private key stays on the server and the passphrase is not stored by the app.</p></article>
+</section>
+<div class="notice warning"><strong>Trust matters:</strong> share your public key with recipients through a separate trusted channel. A key inside an untrusted bundle alone does not establish who signed it.</div>
+{% elif page == "sign" %}
+<section class="panel">
+  <div class="eyebrow">PRIVATE KEY REQUIRED</div><h1>Sign a document</h1>
+  <p class="muted">Your document is signed using ECDSA P-256 with SHA-256. Maximum file size: 25 MB.</p>
+  <form method="post" enctype="multipart/form-data">
+    <label for="document">Choose document</label>
+    <input id="document" name="document" type="file" required>
+    <label for="passphrase">Private-key passphrase</label>
+    <input id="passphrase" name="passphrase" type="password" autocomplete="current-password" required>
+    <p class="hint">The passphrase is used to decrypt the private key for this operation. It is not saved to disk.</p>
+    <button class="button primary" type="submit">Sign and download bundle</button>
+  </form>
+</section>
+{% elif page == "verify" %}
+<section class="panel">
+  <div class="eyebrow">SIGNATURE VALIDATION</div><h1>Verify a signed bundle</h1>
+  <p class="muted">Upload the ZIP bundle produced by this application. Verification uses the local trusted public key.</p>
+  <form method="post" enctype="multipart/form-data">
+    <label for="bundle">Signed ZIP bundle</label>
+    <input id="bundle" name="bundle" type="file" accept=".zip,application/zip" required>
+    <button class="button primary" type="submit">Verify signature</button>
+  </form>
+  {% if result %}
+  <section class="result {{ 'valid' if result.valid else 'invalid' }}">
+    <div class="result-title">{{ '✓ Signature valid' if result.valid else '✕ Verification failed' }}</div>
+    <p>{{ result.message }}</p>
+    {% if result.details %}
+    <dl>
+      {% if result.details.document_filename %}<dt>Document</dt><dd>{{ result.details.document_filename }}</dd>{% endif %}
+      {% if result.details.sha256 %}<dt>SHA-256</dt><dd class="hash">{{ result.details.sha256 }}</dd>{% endif %}
+      {% if result.details.created_utc %}<dt>Signed at (UTC)</dt><dd>{{ result.details.created_utc }}</dd>{% endif %}
+      {% if result.details.signature_bytes %}<dt>Signature size</dt><dd>{{ result.details.signature_bytes }} bytes</dd>{% endif %}
+    </dl>
+    {% endif %}
+  </section>
+  {% endif %}
+</section>
+{% endif %}
+{% endblock %}
